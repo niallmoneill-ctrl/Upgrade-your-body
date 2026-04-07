@@ -3,17 +3,29 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useTheme } from '@/components/theme-provider'
+import {
+  LayoutDashboard,
+  Target,
+  CalendarCheck,
+  Bell,
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+} from 'lucide-react'
 
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const { theme, toggle } = useTheme()
 
   const nav = [
-    { name: 'Dashboard', href: '/app/dashboard' },
-    { name: 'Tracker', href: '/app/tracker' },
-    { name: 'Weekly Review', href: '/app/weekly-review' },
-    { name: 'Reminders', href: '/app/reminders' },
-    { name: 'Settings', href: '/app/settings' },
+    { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
+    { name: 'Tracker', href: '/app/tracker', icon: Target },
+    { name: 'Weekly Review', href: '/app/weekly-review', icon: CalendarCheck },
+    { name: 'Reminders', href: '/app/reminders', icon: Bell },
+    { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
   async function handleLogout() {
@@ -23,36 +35,73 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex w-64 flex-col border-r border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-6 text-lg font-bold">
-        Upgrade Your Body
+    <div
+      className="flex w-64 flex-col p-5"
+      style={{
+        background: 'var(--uyb-sidebar-bg)',
+        borderRight: '1px solid var(--uyb-sidebar-border)',
+      }}
+    >
+      <div className="mb-8">
+        <div className="text-lg font-bold tracking-tight">
+          <span className="uyb-gradient-text">Upgrade</span> Your Body
+        </div>
+        <div className="mt-1 text-xs" style={{ color: 'var(--uyb-muted)' }}>
+          Health tracking made simple
+        </div>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-1">
         {nav.map((item) => {
           const active = pathname === item.href
+          const Icon = item.icon
 
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`block rounded-xl px-3 py-2 text-sm font-medium ${
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
+              style={
                 active
-                  ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-white'
-                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
+                  ? {
+                      background: 'linear-gradient(90deg, var(--uyb-green), #64f0b1)',
+                      color: '#041019',
+                      boxShadow: '0 4px 16px rgba(65,217,138,0.25)',
+                    }
+                  : {
+                      color: 'var(--uyb-muted)',
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (!active) e.currentTarget.style.background = 'var(--uyb-surface)'
+              }}
+              onMouseLeave={(e) => {
+                if (!active) e.currentTarget.style.background = 'transparent'
+              }}
             >
+              <Icon className="h-4 w-4" />
               {item.name}
             </Link>
           )
         })}
       </nav>
 
-      <div className="mt-auto space-y-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+      <div className="space-y-1 pt-4" style={{ borderTop: '1px solid var(--uyb-card-border)' }}>
+        <button
+          onClick={toggle}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
+          style={{ color: 'var(--uyb-muted)' }}
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        </button>
+
         <button
           onClick={handleLogout}
-          className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
+          style={{ color: 'var(--uyb-muted)' }}
         >
+          <LogOut className="h-4 w-4" />
           Log out
         </button>
       </div>

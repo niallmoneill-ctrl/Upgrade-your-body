@@ -2,266 +2,186 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Footprints,
-  Droplets,
-  Bed,
-  Candy,
-  Wine,
-  Brain,
-  Dumbbell,
-  Activity,
-  Plus,
+  Footprints, Droplets, Bed, Candy, Wine, Brain, Dumbbell, Activity,
+  Heart, Flame, Apple, Salad, Timer, Moon, Sun, Plus, Check, X, TrendingUp, Calendar,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 
-type Metric = {
-  id: string
-  name: string
-  unit: string | null
-  target_value: number | null
-  category: string
-  icon: string | null
-  position: number
-}
+type Metric = { id: string; name: string; unit: string | null; target_value: number | null; category: string; icon: string | null; position: number }
+type Entry = { id: string; metric_id: string; value: number; entry_date: string; note: string | null }
 
-function iconFor(name: string | null) {
-  switch (name) {
-    case 'steps':
-      return Footprints
-    case 'water':
-      return Droplets
-    case 'sleep':
-      return Bed
-    case 'sugar':
-      return Candy
-    case 'alcohol':
-      return Wine
-    case 'meditation':
-      return Brain
-    case 'pressups':
-      return Dumbbell
-    case 'workout':
-      return Activity
-    default:
-      return Activity
-  }
+const ICONS: Record<string, typeof Activity> = {
+  steps: Footprints, water: Droplets, sleep: Bed, sugar: Candy, alcohol: Wine,
+  meditation: Brain, pressups: Dumbbell, workout: Activity, heart: Heart,
+  calories: Flame, fruit: Apple, salad: Salad, timer: Timer, moon: Moon, sun: Sun, trending: TrendingUp,
 }
+const CATEGORIES = ['Movement', 'Nutrition', 'Recovery', 'Mindset']
+const UNITS = [
+  { value: '', label: 'No unit' }, { value: 'steps', label: 'Steps' }, { value: 'glasses', label: 'Glasses' },
+  { value: 'litres', label: 'Litres' }, { value: 'hours', label: 'Hours' }, { value: 'minutes', label: 'Minutes' },
+  { value: 'grams', label: 'Grams' }, { value: 'kcal', label: 'Calories' }, { value: 'reps', label: 'Reps' },
+  { value: 'sets', label: 'Sets' }, { value: 'kg', label: 'Kilograms' }, { value: 'lbs', label: 'Pounds' },
+  { value: '%', label: 'Percent' }, { value: 'servings', label: 'Servings' },
+]
+function iconFor(n: string | null) { return ICONS[n ?? ''] ?? Activity }
 
 export default function TrackerPage() {
   const [metrics, setMetrics] = useState<Metric[]>([])
+  const [entries, setEntries] = useState<Entry[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [entry, setEntry] = useState('')
+  const [entryValue, setEntryValue] = useState('')
+  const [entryNote, setEntryNote] = useState('')
   const [filter, setFilter] = useState('All')
-  const [draftName, setDraftName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [draftName, setDraftName] = useState('')
+  const [draftCategory, setDraftCategory] = useState('Movement')
+  const [draftUnit, setDraftUnit] = useState('')
+  const [draftTarget, setDraftTarget] = useState('')
+  const [draftIcon, setDraftIcon] = useState('workout')
 
   async function loadMetrics() {
     setLoading(true)
-    setError('')
-
     try {
       const data = await api<{ metrics: Metric[] }>('/api/metrics')
       setMetrics(data.metrics)
-      if (data.metrics.length > 0 && !selectedId) {
-        setSelectedId(data.metrics[0].id)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load metrics')
-    } finally {
-      setLoading(false)
-    }
+      if (data.metrics.length > 0 && !selectedId) setSelectedId(data.metrics[0].id)
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load') }
+    finally { setLoading(false) }
   }
+  async function loadEntries(id: string) {
+    try { const d = await api<{ entries: Entry[] }>(`/api/metric-entries?metric_id=${id}`); setEntries(d.entries ?? []) }
+    catch { setEntries([]) }
+  }
+  useEffect(() => { loadMetrics() }, [])
+  useEffect(() => { if (selectedId) loadEntries(selectedId) }, [selectedId])
 
-  useEffect(() => {
-    loadMetrics()
-  }, [])
-
-  const visibleMetrics = useMemo(() => {
-    return filter === 'All' ? metrics : metrics.filter((m) => m.category === filter)
-  }, [filter, metrics])
-
+  const visibleMetrics = useMemo(() => filter === 'All' ? metrics : metrics.filter((m) => m.category === filter), [filter, metrics])
   const activeMetric = metrics.find((m) => m.id === selectedId) || metrics[0]
+  function flash(msg: string) { setSuccess(msg); setTimeout(() => setSuccess(''), 3000) }
 
-  async function handleCreateMetric() {
+  async function handleCreate() {
     if (!draftName.trim()) return
-
     try {
-      const data = await api<{ metric: Metric }>('/api/metrics', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: draftName.trim(),
-          unit: '',
-          target_value: 1,
-          category: 'Movement',
-          icon: 'workout',
-          position: metrics.length,
-        }),
-      })
-
-      setMetrics((prev) => [...prev, data.metric])
-      setSelectedId(data.metric.id)
-      setDraftName('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create metric')
-    }
+      const d = await api<{ metric: Metric }>('/api/metrics', { method: 'POST', body: JSON.stringify({ name: draftName.trim(), unit: draftUnit, target_value: draftTarget ? Number(draftTarget) : null, category: draftCategory, icon: draftIcon, position: metrics.length }) })
+      setMetrics((p) => [...p, d.metric]); setSelectedId(d.metric.id)
+      setDraftName(''); setDraftCategory('Movement'); setDraftUnit(''); setDraftTarget(''); setDraftIcon('workout'); setShowCreate(false); flash('Metric created!')
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to create') }
   }
-
   async function handleSaveEntry() {
-    if (!activeMetric || entry === '') return
-
+    if (!activeMetric || entryValue === '') return
     try {
-      await api('/api/metric-entries', {
-        method: 'POST',
-        body: JSON.stringify({
-          metric_id: activeMetric.id,
-          value: Number(entry),
-        }),
-      })
-
-      setEntry('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save entry')
-    }
+      await api('/api/metric-entries', { method: 'POST', body: JSON.stringify({ metric_id: activeMetric.id, value: Number(entryValue), note: entryNote || null }) })
+      setEntryValue(''); setEntryNote(''); flash('Entry logged!')
+      if (selectedId) loadEntries(selectedId)
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save') }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
-          Tracker
-        </div>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Track every health element that matters
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400 md:text-base">
-          Live metrics are now loaded from your authenticated API.
-        </p>
+        <div className="text-xs font-semibold uppercase tracking-[0.25em]" style={{ color: 'var(--uyb-green)' }}>Tracker</div>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Track every <span className="uyb-gradient-text">health element</span></h1>
+        <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--uyb-muted)' }}>Create custom metrics, log daily entries, and monitor your progress.</p>
       </div>
 
-      {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-          {error}
-        </div>
-      ) : null}
+      {error && <div className="uyb-card flex items-center justify-between" style={{ borderColor: 'rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)', padding: '12px 16px' }}><span className="text-sm" style={{ color: '#fca5a5' }}>{error}</span><button onClick={() => setError('')}><X className="h-4 w-4" style={{ color: '#fca5a5' }} /></button></div>}
+      {success && <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--uyb-green)' }}><Check className="h-4 w-4" />{success}</div>}
 
-      <div className="flex flex-wrap gap-2">
-        {['All', 'Movement', 'Nutrition', 'Recovery', 'Mindset'].map((label) => (
-          <button
-            key={label}
-            onClick={() => setFilter(label)}
-            className={`rounded-full px-3 py-2 text-sm font-medium ${
-              filter === label
-                ? 'border border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/15 dark:text-cyan-300'
-                : 'border border-slate-300 bg-white text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        {['All', ...CATEGORIES].map((label) => (
+          <button key={label} onClick={() => setFilter(label)} className="uyb-btn-secondary" style={filter === label ? { background: 'rgba(65,217,138,0.15)', borderColor: 'var(--uyb-green)', color: 'var(--uyb-green)', padding: '8px 16px', fontSize: 13 } : { padding: '8px 16px', fontSize: 13 }}>
             {label}
           </button>
         ))}
+        <button onClick={() => setShowCreate(true)} className="uyb-btn-primary ml-auto" style={{ padding: '8px 18px', fontSize: 13 }}>
+          <Plus className="h-4 w-4" />New metric
+        </button>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <div className="font-semibold">Your metrics</div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">Loaded from Supabase</div>
-            </div>
-            <div className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/15 dark:text-cyan-300">
-              {loading ? 'Loading…' : `${visibleMetrics.length} shown`}
+      {/* Create form */}
+      {showCreate && (
+        <div className="uyb-card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-semibold text-lg">Create new metric</div>
+            <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl" style={{ color: 'var(--uyb-muted)' }}><X className="h-4 w-4" /></button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><label className="mb-1.5 block text-sm font-medium">Name</label><input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="e.g. Daily Steps" className="uyb-input" /></div>
+            <div><label className="mb-1.5 block text-sm font-medium">Category</label><select value={draftCategory} onChange={(e) => setDraftCategory(e.target.value)} className="uyb-input">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label className="mb-1.5 block text-sm font-medium">Unit</label><select value={draftUnit} onChange={(e) => setDraftUnit(e.target.value)} className="uyb-input">{UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}</select></div>
+            <div><label className="mb-1.5 block text-sm font-medium">Daily target</label><input value={draftTarget} onChange={(e) => setDraftTarget(e.target.value)} type="number" placeholder="e.g. 10000" className="uyb-input" /></div>
+          </div>
+          <div className="mt-4">
+            <label className="mb-1.5 block text-sm font-medium">Icon</label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(ICONS).map(([key, Icon]) => (
+                <button key={key} onClick={() => setDraftIcon(key)} className="p-2.5 rounded-xl transition" style={draftIcon === key ? { background: 'linear-gradient(90deg, var(--uyb-green), #64f0b1)', color: '#041019' } : { background: 'var(--uyb-surface)', color: 'var(--uyb-muted)' }}>
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
             </div>
           </div>
+          <div className="mt-5 flex gap-3">
+            <button onClick={handleCreate} className="uyb-btn-primary">Create metric</button>
+            <button onClick={() => setShowCreate(false)} className="uyb-btn-secondary">Cancel</button>
+          </div>
+        </div>
+      )}
 
-          <div className="space-y-3">
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        {/* Metric list */}
+        <div className="uyb-card">
+          <div className="mb-4 flex items-center justify-between">
+            <div><div className="font-semibold">Your metrics</div><div className="text-sm" style={{ color: 'var(--uyb-muted)' }}>Tap to log an entry</div></div>
+            <span className="uyb-btn-secondary" style={{ padding: '4px 14px', fontSize: 12, cursor: 'default' }}>{loading ? 'Loading…' : `${visibleMetrics.length} shown`}</span>
+          </div>
+          <div className="space-y-2">
             {visibleMetrics.map((metric) => {
-              const Icon = iconFor(metric.icon)
-              const selected = selectedId === metric.id
+              const Icon = iconFor(metric.icon); const sel = selectedId === metric.id
               return (
-                <button
-                  key={metric.id}
-                  onClick={() => setSelectedId(metric.id)}
-                  className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left ${
-                    selected
-                      ? 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800'
-                  }`}
-                >
+                <button key={metric.id} onClick={() => setSelectedId(metric.id)} className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition" style={sel ? { background: 'linear-gradient(90deg, var(--uyb-green), #64f0b1)', color: '#041019', boxShadow: '0 4px 16px rgba(65,217,138,0.25)' } : { background: 'var(--uyb-surface)' }}>
                   <div className="flex items-center gap-3">
-                    <Icon className="h-4 w-4" />
-                    <div>
-                      <div className="font-medium">{metric.name}</div>
-                      <div className={`text-xs ${selected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {metric.category}
-                      </div>
-                    </div>
+                    <div className="rounded-xl p-2" style={{ background: sel ? 'rgba(255,255,255,0.25)' : 'var(--uyb-card)' }}><Icon className="h-4 w-4" /></div>
+                    <div><div className="font-medium">{metric.name}</div><div className="text-xs" style={{ opacity: sel ? 0.7 : 1, color: sel ? 'inherit' : 'var(--uyb-muted)' }}>{metric.category}</div></div>
                   </div>
-                  <div className="text-sm font-semibold">
-                    Target {metric.target_value ?? '-'}
-                  </div>
+                  <div className="text-right"><div className="text-sm font-semibold">{metric.target_value ?? '-'}{metric.unit ? ` ${metric.unit}` : ''}</div><div className="text-xs" style={{ opacity: 0.6 }}>target</div></div>
                 </button>
               )
             })}
+            {!loading && visibleMetrics.length === 0 && <div className="uyb-surface p-4 text-center text-sm" style={{ color: 'var(--uyb-muted)' }}>No metrics yet.</div>}
           </div>
         </div>
 
+        {/* Right panel */}
         <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-            <div className="font-semibold">Log today’s entry</div>
-            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">Saves through /api/metric-entries</div>
-
-            {activeMetric ? (
-              <>
-                <div className="mt-5 rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Selected metric</div>
-                  <div className="mt-1 text-2xl font-bold">{activeMetric.name}</div>
-                  <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Target {activeMetric.target_value ?? '-'}{activeMetric.unit ?? ''}
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <input
-                    value={entry}
-                    onChange={(e) => setEntry(e.target.value)}
-                    type="number"
-                    placeholder={`Enter value in ${activeMetric.unit || 'units'}`}
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500"
-                  />
-                  <button
-                    onClick={handleSaveEntry}
-                    className="rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-5 py-3 text-sm font-semibold text-white"
-                  >
-                    Save
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="mt-4 rounded-2xl bg-slate-100 p-4 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                Create your first metric to start logging entries.
+          <div className="uyb-card">
+            <div className="font-semibold">Log today&apos;s entry</div>
+            {activeMetric ? (<>
+              <div className="mt-4 uyb-surface p-4 flex items-center gap-3">
+                {(() => { const I = iconFor(activeMetric.icon); return <div className="uyb-icon-box" style={{ width: 36, height: 36, borderRadius: 10 }}><I className="h-4 w-4" style={{ color: 'var(--uyb-green)' }} /></div> })()}
+                <div><div className="font-semibold">{activeMetric.name}</div><div className="text-sm" style={{ color: 'var(--uyb-muted)' }}>Target: {activeMetric.target_value ?? '-'}{activeMetric.unit ? ` ${activeMetric.unit}` : ''} · {activeMetric.category}</div></div>
               </div>
-            )}
+              <div className="mt-4 space-y-3">
+                <input value={entryValue} onChange={(e) => setEntryValue(e.target.value)} type="number" placeholder={`Value${activeMetric.unit ? ` in ${activeMetric.unit}` : ''}`} className="uyb-input" />
+                <input value={entryNote} onChange={(e) => setEntryNote(e.target.value)} placeholder="Note (optional)" className="uyb-input" />
+                <button onClick={handleSaveEntry} className="uyb-btn-primary w-full justify-center">Save entry</button>
+              </div>
+            </>) : <div className="mt-4 uyb-surface p-4 text-sm" style={{ color: 'var(--uyb-muted)' }}>Create a metric to start logging.</div>}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
-            <div className="font-semibold">Create metric</div>
-            <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">Saves through /api/metrics</div>
-            <div className="mt-4 flex gap-3">
-              <input
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                placeholder="e.g. Protein"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500"
-              />
-              <button
-                onClick={handleCreateMetric}
-                className="rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-4 py-3 text-sm font-semibold text-white"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add
-                </span>
-              </button>
+          <div className="uyb-card">
+            <div className="flex items-center gap-2 font-semibold"><Calendar className="h-4 w-4" style={{ color: 'var(--uyb-muted)' }} />Recent entries</div>
+            <div className="mt-3 space-y-2">
+              {entries.length === 0 ? <div className="uyb-surface p-3 text-center text-sm" style={{ color: 'var(--uyb-muted)' }}>No entries yet.</div> : entries.slice(0, 10).map((e) => (
+                <div key={e.id} className="uyb-surface flex items-center justify-between px-4 py-2.5">
+                  <div><div className="text-sm font-medium">{e.value}{activeMetric?.unit ? ` ${activeMetric.unit}` : ''}</div>{e.note && <div className="text-xs" style={{ color: 'var(--uyb-muted)' }}>{e.note}</div>}</div>
+                  <div className="text-xs" style={{ color: 'var(--uyb-muted)' }}>{e.entry_date}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
