@@ -64,9 +64,9 @@ export default function Sidebar() {
               style={
                 active
                   ? {
-                      background: 'linear-gradient(90deg, var(--uyb-green), #64f0b1)',
+                      background: 'var(--uyb-btn-gradient)',
                       color: '#041019',
-                      boxShadow: '0 4px 16px rgba(65,217,138,0.25)',
+                      boxShadow: '0 4px 16px rgba(42,157,110,0.2)',
                     }
                   : {
                       color: 'var(--uyb-muted)',
