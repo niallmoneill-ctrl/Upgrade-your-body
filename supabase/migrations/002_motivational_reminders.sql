@@ -43,18 +43,24 @@ ALTER TABLE phrase_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Phrases are readable by everyone (they're not sensitive)
+DROP POLICY IF EXISTS "Anyone can read phrases" ON motivational_phrases;
 CREATE POLICY "Anyone can read phrases" ON motivational_phrases FOR SELECT USING (true);
 
 -- Phrase history: users see only their own
+DROP POLICY IF EXISTS "Users view own phrase history" ON phrase_history;
 CREATE POLICY "Users view own phrase history" ON phrase_history FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users insert own phrase history" ON phrase_history;
 CREATE POLICY "Users insert own phrase history" ON phrase_history FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Notifications: users see and manage only their own
+DROP POLICY IF EXISTS "Users view own notifications" ON notifications;
 CREATE POLICY "Users view own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users update own notifications" ON notifications;
 CREATE POLICY "Users update own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users insert own notifications" ON notifications;
 CREATE POLICY "Users insert own notifications" ON notifications FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- 5. Seed motivational phrases
+-- 5. Seed motivational phrases (skip if already seeded)
 -- Movement (16 phrases)
 INSERT INTO motivational_phrases (category, phrase) VALUES
 ('Movement', 'Your body was built to move. Every step counts, even the small ones.'),
