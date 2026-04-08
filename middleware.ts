@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -29,15 +28,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes — redirect to login if not authenticated
   if (!user && request.nextUrl.pathname.startsWith('/app')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from login/signup
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+  if (user && (
+    request.nextUrl.pathname === '/login' ||
+    request.nextUrl.pathname === '/signup' ||
+    request.nextUrl.pathname === '/'
+  )) {
     const url = request.nextUrl.clone()
     url.pathname = '/app/dashboard'
     return NextResponse.redirect(url)
@@ -47,5 +48,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/login', '/signup'],
+  matcher: ['/app/:path*', '/login', '/signup', '/'],
 }
