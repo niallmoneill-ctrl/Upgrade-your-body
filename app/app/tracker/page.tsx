@@ -6,6 +6,7 @@ import {
   Heart, Flame, Apple, Salad, Timer, Moon, Sun, Plus, Check, X, TrendingUp, Calendar,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import MetricChart from '@/components/MetricChart'
 
 type Metric = { id: string; name: string; unit: string | null; target_value: number | null; category: string; icon: string | null; position: number }
 type Entry = { id: string; metric_id: string; value: number; entry_date: string; note: string | null }
@@ -186,6 +187,7 @@ export default function TrackerPage() {
           </div>
         </div>
       </div>
+      {activeMetric && <MetricChart metric={activeMetric} />}
     </div>
   )
 }
