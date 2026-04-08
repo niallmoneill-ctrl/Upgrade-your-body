@@ -25,7 +25,7 @@ function LoginForm() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        redirectTo: `https://app.oneill-labs.com/auth/callback`,
       },
     })
   }
@@ -59,7 +59,7 @@ function LoginForm() {
 
     } else if (mode === 'reset') {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/app/update-password`,
+        redirectTo: `https://app.oneill-labs.com/auth/callback?next=/app/update-password`,
       })
       if (error) {
         setMessage({ text: error.message, type: 'error' })
