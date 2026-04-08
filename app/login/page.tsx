@@ -26,6 +26,7 @@ function LoginForm() {
       provider: 'google',
       options: {
         redirectTo: `https://app.oneill-labs.com/auth/callback`,
+        queryParams: { prompt: 'select_account' },
       },
     })
   }
