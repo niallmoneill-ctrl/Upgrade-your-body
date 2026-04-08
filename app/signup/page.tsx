@@ -14,7 +14,7 @@ export default function SignUpPage() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        redirectTo: `https://app.oneill-labs.com/auth/callback`,
       },
     })
   }
