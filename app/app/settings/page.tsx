@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Check, User, Palette, CreditCard, Globe } from 'lucide-react'
+import { Check, User, Palette, CreditCard, Globe, Download } from 'lucide-react'
 import { useTheme } from '@/components/theme-provider'
 
 const TIMEZONES = [
@@ -53,6 +53,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [ebookPurchased, setEbookPurchased] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const { theme, toggle } = useTheme()
 
   useEffect(() => {
@@ -63,6 +65,14 @@ export default function SettingsPage() {
         setEmail(user.email ?? '')
         setDisplayName(user.user_metadata?.display_name ?? user.user_metadata?.name ?? '')
         setTimezone(user.user_metadata?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'Europe/Dublin')
+
+        // Check subscription for eBook purchase
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('ebook_purchased')
+          .eq('user_id', user.id)
+          .single()
+        if (sub?.ebook_purchased) setEbookPurchased(true)
       }
       setLoading(false)
     }
@@ -169,6 +179,36 @@ export default function SettingsPage() {
               <span style={{ background: 'rgba(65,217,138,0.15)', color: 'var(--uyb-green)', borderRadius: 999, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>Free</span>
             </div>
           </div>
+
+          {/* eBook Download */}
+          {ebookPurchased && (
+            <div className="uyb-card">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="uyb-icon-box"><Download className="h-5 w-5" style={{ color: 'var(--uyb-green)' }} /></div>
+                <div className="font-semibold">Your eBook</div>
+              </div>
+              <div className="uyb-surface p-4">
+                <div className="font-medium">Upgrade Your Body — 1st Edition</div>
+                <div className="text-sm mt-1" style={{ color: 'var(--uyb-muted)' }}>PDF format · Download anytime</div>
+                <button
+                  disabled={downloading}
+                  onClick={async () => {
+                    setDownloading(true)
+                    try {
+                      const res = await fetch('/api/ebook/download')
+                      const data = await res.json()
+                      if (data.url) window.open(data.url, '_blank')
+                    } catch (err) { console.error(err) }
+                    finally { setDownloading(false) }
+                  }}
+                  className="uyb-btn-primary mt-3"
+                  style={{ opacity: downloading ? 0.6 : 1 }}
+                >
+                  {downloading ? 'Preparing...' : 'Download PDF'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
