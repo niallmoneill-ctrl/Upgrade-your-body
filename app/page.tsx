@@ -26,6 +26,13 @@ export default function HomePage() {
           </Link>
 
           <Link
+            href="/pricing"
+            className="inline-flex rounded-2xl bg-gradient-to-r from-cyan-500 to-emerald-500 px-5 py-3 text-sm font-semibold text-white"
+          >
+            View pricing
+          </Link>
+
+          <Link
             href="/login"
             className="inline-flex rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-900"
           >

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/theme-provider'
 import {
   LayoutDashboard, Target, CalendarCheck, Bell,
-  Settings, LogOut, Sun, Moon, Menu, X,
+  Settings, LogOut, Sun, Moon, Menu, X, Sparkles,
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -22,6 +22,7 @@ export default function Sidebar() {
     { name: 'Weekly Review', href: '/app/weekly-review', icon: CalendarCheck },
     { name: 'Reminders', href: '/app/reminders', icon: Bell },
     { name: 'Settings', href: '/app/settings', icon: Settings },
+    { name: 'Upgrade', href: '/pricing', icon: Sparkles },
   ]
 
   async function handleLogout() {

@@ -93,6 +93,13 @@ export default function PricingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#08111f', color: 'white', padding: '4rem 1rem' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <a href="/" style={{ color: '#888', fontSize: '14px', textDecoration: 'none' }}>← Home</a>
+          {' · '}
+          <a href="/login" style={{ color: '#888', fontSize: '14px', textDecoration: 'none' }}>Log in</a>
+          {' · '}
+          <a href="/signup" style={{ color: '#888', fontSize: '14px', textDecoration: 'none' }}>Sign up</a>
+        </div>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <p style={{ fontSize: '12px', letterSpacing: '3px', color: '#888', textTransform: 'uppercase', marginBottom: '8px' }}>O'Neill Labs</p>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '8px', background: 'linear-gradient(90deg, #41d98a, #4a9eff, #f5a623)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
