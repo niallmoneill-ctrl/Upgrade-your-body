@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
       allow_promotion_codes: true,
+      ...(!isSubscription && { customer_creation: 'always' as const }),
       metadata: {
         product_type: isBundle ? 'bundle' : isSubscription ? 'subscription' : 'one_time',
         ...(userId && { user_id: userId }),
