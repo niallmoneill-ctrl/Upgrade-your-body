@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-});
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2026-03-25.dahlia',
+  });
+}
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+function getWebhookSecret() {
+  return process.env.STRIPE_WEBHOOK_SECRET!;
+};
 
 // Create Supabase admin client lazily so env vars are resolved at runtime
 function getSupabase() {
@@ -72,7 +76,7 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    event = getStripe().webhooks.constructEvent(body, sig, getWebhookSecret());
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -102,7 +106,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (productType === 'subscription') {
-          const subscriptions = await stripe.subscriptions.list({
+          const subscriptions = await getStripe().subscriptions.list({
             customer: stripeCustomerId,
             limit: 1,
           });
@@ -136,7 +140,7 @@ export async function POST(req: NextRequest) {
           if (session.metadata?.create_trial_subscription === 'true') {
             const trialEnd =
               Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60;
-            const trialSub = await stripe.subscriptions.create({
+            const trialSub = await getStripe().subscriptions.create({
               customer: stripeCustomerId,
               items: [{ price: session.metadata.trial_price_id }],
               trial_end: trialEnd,
