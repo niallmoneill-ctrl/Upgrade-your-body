@@ -71,15 +71,26 @@ async function upsertSubscription(
       if (error) { console.error('Supabase update error:', error); throw error; }
       return;
     }
+
+    // No existing row for this user — insert one
+    const { error } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: userId,
+        ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+        updated_at: new Date().toISOString(),
+        ...updates,
+      });
+    if (error) { console.error('Supabase insert error:', error); throw error; }
+    return;
   }
 
-  // Priority 2: If we have a stripe_customer_id, upsert on that
+  // Priority 2: No user_id — guest purchase, upsert by stripe_customer_id
   if (stripeCustomerId) {
     const { error } = await supabase
       .from('subscriptions')
       .upsert(
         {
-          ...(userId ? { user_id: userId } : {}),
           stripe_customer_id: stripeCustomerId,
           updated_at: new Date().toISOString(),
           ...updates,
@@ -87,13 +98,6 @@ async function upsertSubscription(
         { onConflict: 'stripe_customer_id' }
       );
     if (error) { console.error('Supabase upsert error:', error); throw error; }
-  } else if (userId) {
-    // New user, no stripe_customer_id — insert
-    const { error } = await supabase
-      .from('subscriptions')
-      .insert({ user_id: userId, updated_at: new Date().toISOString(), ...updates });
-    if (error) { console.error('Supabase insert error:', error); throw error; }
-    }
   } else {
     console.error('No stripe_customer_id or user_id — cannot save subscription');
   }
