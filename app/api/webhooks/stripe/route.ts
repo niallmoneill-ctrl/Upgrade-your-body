@@ -9,13 +9,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// Use service role key to bypass RLS
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Create Supabase admin client lazily so env vars are resolved at runtime
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 async function getUserByEmail(email: string) {
+  const supabase = getSupabase();
   const { data, error } = await supabase.auth.admin.listUsers();
   if (error) {
     console.error('Error listing users:', error);
@@ -39,6 +42,7 @@ async function upsertSubscription(
   stripeCustomerId: string,
   updates: Record<string, any>
 ) {
+  const supabase = getSupabase();
   const { error } = await supabase
     .from('subscriptions')
     .upsert(
@@ -48,7 +52,7 @@ async function upsertSubscription(
         updated_at: new Date().toISOString(),
         ...updates,
       },
-      { onConflict: userId ? 'user_id' : 'stripe_customer_id' }
+      { onConflict: 'stripe_customer_id' }
     );
 
   if (error) {
@@ -152,6 +156,7 @@ export async function POST(req: NextRequest) {
         const customerId = subscription.customer as string;
         const period = getSubscriptionPeriod(subscription);
 
+        const supabase = getSupabase();
         const { data: subRecord } = await supabase
           .from('subscriptions')
           .select('user_id')
@@ -173,6 +178,7 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
+        const supabase = getSupabase();
         const { data: subRecord } = await supabase
           .from('subscriptions')
           .select('user_id')
@@ -196,6 +202,7 @@ export async function POST(req: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
 
+        const supabase = getSupabase();
         const { data: subRecord } = await supabase
           .from('subscriptions')
           .select('user_id')
