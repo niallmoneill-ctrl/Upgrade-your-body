@@ -25,7 +25,7 @@ async function getUserByEmail(email: string) {
 }
 
 async function upsertSubscription(
-  userId: string,
+  userId: string | null,
   stripeCustomerId: string,
   updates: Record<string, any>
 ) {
@@ -33,58 +33,12 @@ async function upsertSubscription(
     .from('subscriptions')
     .upsert(
       {
-        user_id: userId,
+        ...(userId ? { user_id: userId } : {}),
         stripe_customer_id: stripeCustomerId,
         updated_at: new Date().toISOString(),
         ...updates,
       },
-      { onConflict: 'user_id' }
-    );
-
-  if (error) {
-    console.error
-cat > app/api/webhooks/stripe/route.ts << 'EOF'
-import Stripe from 'stripe';
-import { NextRequest, NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
-// Use service role key to bypass RLS
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-async function getUserByEmail(email: string) {
-  const { data, error } = await supabase.auth.admin.listUsers();
-  if (error) {
-    console.error('Error listing users:', error);
-    return null;
-  }
-  return data.users.find((u) => u.email === email) || null;
-}
-
-async function upsertSubscription(
-  userId: string,
-  stripeCustomerId: string,
-  updates: Record<string, any>
-) {
-  const { error } = await supabase
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: userId,
-        stripe_customer_id: stripeCustomerId,
-        updated_at: new Date().toISOString(),
-        ...updates,
-      },
-      { onConflict: 'user_id' }
+      { onConflict: userId ? 'user_id' : 'stripe_customer_id' }
     );
 
   if (error) {
@@ -122,25 +76,26 @@ export async function POST(req: NextRequest) {
           break;
         }
 
-        // Find the Supabase user by email
+        // Find the Supabase user by email (may be null for guest purchases)
         const user = await getUserByEmail(customerEmail);
-        if (!user) {
-          console.error(`No Supabase user found for ${customerEmail}`);
-          break;
+        const userId = user?.id || null;
+
+        if (!userId) {
+          console.log(`No Supabase user found for ${customerEmail} — saving as guest purchase`);
         }
 
         if (productType === 'subscription') {
-          // Pro monthly or yearly subscription
           const subscription = await stripe.subscriptions.list({
             customer: stripeCustomerId,
             limit: 1,
           });
           const sub = subscription.data[0];
 
-          await upsertSubscription(user.id, stripeCustomerId, {
+          await upsertSubscription(userId, stripeCustomerId, {
             stripe_subscription_id: sub?.id || null,
             plan_type: 'pro',
             status: 'active',
+            customer_email: customerEmail,
             current_period_start: sub
               ? new Date(sub.current_period_start * 1000).toISOString()
               : null,
@@ -150,21 +105,20 @@ export async function POST(req: NextRequest) {
           });
           console.log(`Pro subscription saved for ${customerEmail}`);
         } else if (productType === 'one_time') {
-          // eBook purchase
-          await upsertSubscription(user.id, stripeCustomerId, {
+          await upsertSubscription(userId, stripeCustomerId, {
             ebook_purchased: true,
+            customer_email: customerEmail,
           });
           console.log(`eBook purchase saved for ${customerEmail}`);
         } else if (productType === 'bundle') {
-          // Bundle: eBook + 3-month trial
-          await upsertSubscription(user.id, stripeCustomerId, {
+          await upsertSubscription(userId, stripeCustomerId, {
             plan_type: 'pro',
             status: 'active',
             ebook_purchased: true,
             bundle_purchased: true,
+            customer_email: customerEmail,
           });
 
-          // Create the 3-month trial subscription in Stripe
           if (session.metadata?.create_trial_subscription === 'true') {
             const trialEnd =
               Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60;
@@ -175,7 +129,7 @@ export async function POST(req: NextRequest) {
               metadata: { source: 'bundle_purchase' },
             });
 
-            await upsertSubscription(user.id, stripeCustomerId, {
+            await upsertSubscription(userId, stripeCustomerId, {
               stripe_subscription_id: trialSub.id,
               current_period_end: new Date(
                 trialEnd * 1000
@@ -191,7 +145,6 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        // Find user by stripe customer ID
         const { data: subRecord } = await supabase
           .from('subscriptions')
           .select('user_id')
