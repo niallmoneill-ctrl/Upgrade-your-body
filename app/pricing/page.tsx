@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const tiers = [
   {
@@ -62,13 +63,20 @@ const priceIds: Record<string, string> = {
 export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
 
+  const supabase = createClientComponentClient();
+
   const handleCheckout = async (tier: typeof tiers[0]) => {
     setLoading(tier.key);
     try {
       const priceId = priceIds[tier.priceEnv];
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ priceId }),
       });
       const data = await res.json();

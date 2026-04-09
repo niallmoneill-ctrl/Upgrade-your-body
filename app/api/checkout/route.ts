@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -13,6 +14,30 @@ export async function POST(req: NextRequest) {
 
     if (!priceId) {
       return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
+    }
+
+    let userId: string | null = null;
+    let userEmail: string | null = null;
+
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: req.headers.get('Authorization') || '',
+            },
+          },
+        }
+      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+        userEmail = user.email || null;
+      }
+    } catch {
+      // Not logged in — continue as guest
     }
 
     const stripe = getStripe();
@@ -32,8 +57,23 @@ export async function POST(req: NextRequest) {
       allow_promotion_codes: true,
       metadata: {
         product_type: isBundle ? 'bundle' : isSubscription ? 'subscription' : 'one_time',
+        ...(userId && { user_id: userId }),
+        ...(userEmail && { customer_email: userEmail }),
       },
     };
+
+    if (userEmail) {
+      sessionConfig.customer_email = userEmail;
+    }
+
+    if (isSubscription) {
+      sessionConfig.subscription_data = {
+        metadata: {
+          ...(userId && { user_id: userId }),
+          ...(userEmail && { customer_email: userEmail }),
+        },
+      };
+    }
 
     if (isBundle) {
       sessionConfig.metadata!.create_trial_subscription = 'true';
