@@ -11,10 +11,13 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 // Create Supabase admin client lazily so env vars are resolved at runtime
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.error('Missing Supabase env vars:', { hasUrl: !!url, hasKey: !!key });
+    throw new Error('Supabase environment variables not configured');
+  }
+  return createClient(url, key);
 }
 
 async function getUserByEmail(email: string) {
@@ -219,9 +222,9 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err: any) {
-    console.error('Webhook handler error:', err.message);
+    console.error('Webhook handler error:', err.message, err.stack || err);
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
+      { error: 'Webhook handler failed', detail: err.message },
       { status: 500 }
     );
   }
