@@ -51,27 +51,30 @@ async function upsertSubscription(
 ) {
   const supabase = getSupabase();
 
-  // If we have a stripe_customer_id, upsert on that
-  if (stripeCustomerId) {
-    // Check if user already has a row without stripe_customer_id — backfill it
-    if (userId) {
-      const { data: orphan } = await supabase
+  // Priority 1: If we have a user_id, always update their existing row (one row per user)
+  if (userId) {
+    const { data: existing } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      const { error } = await supabase
         .from('subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .is('stripe_customer_id', null)
-        .single();
-
-      if (orphan) {
-        const { error } = await supabase
-          .from('subscriptions')
-          .update({ stripe_customer_id: stripeCustomerId, updated_at: new Date().toISOString(), ...updates })
-          .eq('id', orphan.id);
-        if (error) { console.error('Supabase backfill error:', error); throw error; }
-        return;
-      }
+        .update({
+          ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+          updated_at: new Date().toISOString(),
+          ...updates,
+        })
+        .eq('id', existing.id);
+      if (error) { console.error('Supabase update error:', error); throw error; }
+      return;
     }
+  }
 
+  // Priority 2: If we have a stripe_customer_id, upsert on that
+  if (stripeCustomerId) {
     const { error } = await supabase
       .from('subscriptions')
       .upsert(
@@ -83,30 +86,13 @@ async function upsertSubscription(
         },
         { onConflict: 'stripe_customer_id' }
       );
-
-    if (error) {
-      console.error('Supabase upsert error:', error);
-      throw error;
-    }
+    if (error) { console.error('Supabase upsert error:', error); throw error; }
   } else if (userId) {
-    // No stripe customer ID — insert/update by user_id
-    const { data: existing } = await supabase
+    // New user, no stripe_customer_id — insert
+    const { error } = await supabase
       .from('subscriptions')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    if (existing) {
-      const { error } = await supabase
-        .from('subscriptions')
-        .update({ updated_at: new Date().toISOString(), ...updates })
-        .eq('user_id', userId);
-      if (error) { console.error('Supabase update error:', error); throw error; }
-    } else {
-      const { error } = await supabase
-        .from('subscriptions')
-        .insert({ user_id: userId, updated_at: new Date().toISOString(), ...updates });
-      if (error) { console.error('Supabase insert error:', error); throw error; }
+      .insert({ user_id: userId, updated_at: new Date().toISOString(), ...updates });
+    if (error) { console.error('Supabase insert error:', error); throw error; }
     }
   } else {
     console.error('No stripe_customer_id or user_id — cannot save subscription');
