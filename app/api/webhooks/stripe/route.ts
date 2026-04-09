@@ -24,6 +24,16 @@ async function getUserByEmail(email: string) {
   return data.users.find((u) => u.email === email) || null;
 }
 
+// In Stripe API 2026-03-25, period dates are on subscription items, not the subscription
+function getSubscriptionPeriod(subscription: Stripe.Subscription) {
+  const item = subscription.items?.data?.[0];
+  if (!item) return { start: null, end: null };
+  return {
+    start: new Date(item.current_period_start * 1000).toISOString(),
+    end: new Date(item.current_period_end * 1000).toISOString(),
+  };
+}
+
 async function upsertSubscription(
   userId: string | null,
   stripeCustomerId: string,
@@ -85,23 +95,20 @@ export async function POST(req: NextRequest) {
         }
 
         if (productType === 'subscription') {
-          const subscription = await stripe.subscriptions.list({
+          const subscriptions = await stripe.subscriptions.list({
             customer: stripeCustomerId,
             limit: 1,
           });
-          const sub = subscription.data[0];
+          const sub = subscriptions.data[0];
+          const period = sub ? getSubscriptionPeriod(sub) : { start: null, end: null };
 
           await upsertSubscription(userId, stripeCustomerId, {
             stripe_subscription_id: sub?.id || null,
             plan_type: 'pro',
             status: 'active',
             customer_email: customerEmail,
-            current_period_start: sub
-              ? new Date(sub.current_period_start * 1000).toISOString()
-              : null,
-            current_period_end: sub
-              ? new Date(sub.current_period_end * 1000).toISOString()
-              : null,
+            current_period_start: period.start,
+            current_period_end: period.end,
           });
           console.log(`Pro subscription saved for ${customerEmail}`);
         } else if (productType === 'one_time') {
@@ -129,11 +136,10 @@ export async function POST(req: NextRequest) {
               metadata: { source: 'bundle_purchase' },
             });
 
+            const trialPeriod = getSubscriptionPeriod(trialSub);
             await upsertSubscription(userId, stripeCustomerId, {
               stripe_subscription_id: trialSub.id,
-              current_period_end: new Date(
-                trialEnd * 1000
-              ).toISOString(),
+              current_period_end: trialPeriod.end || new Date(trialEnd * 1000).toISOString(),
             });
           }
           console.log(`Bundle purchase saved for ${customerEmail}`);
@@ -144,6 +150,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
+        const period = getSubscriptionPeriod(subscription);
 
         const { data: subRecord } = await supabase
           .from('subscriptions')
@@ -154,12 +161,8 @@ export async function POST(req: NextRequest) {
         if (subRecord) {
           await upsertSubscription(subRecord.user_id, customerId, {
             status: subscription.status === 'active' ? 'active' : subscription.status,
-            current_period_start: new Date(
-              subscription.current_period_start * 1000
-            ).toISOString(),
-            current_period_end: new Date(
-              subscription.current_period_end * 1000
-            ).toISOString(),
+            current_period_start: period.start,
+            current_period_end: period.end,
           });
           console.log(`Subscription updated for customer ${customerId}`);
         }
