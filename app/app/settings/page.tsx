@@ -188,7 +188,7 @@ export default function SettingsPage() {
                 <div className="font-semibold">Your eBook</div>
               </div>
               <div className="uyb-surface p-4">
-                <div className="font-medium">Upgrade Your Body — 1st Edition</div>
+                <div className="font-medium">Upgrade Your Body</div>
                 <div className="text-sm mt-1" style={{ color: 'var(--uyb-muted)' }}>PDF format · Download anytime</div>
                 <button
                   disabled={downloading}
