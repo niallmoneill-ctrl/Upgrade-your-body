@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerSupabase } from '@/lib/supabase/server';
 
-const EBOOK_PATH = 'Upgrade_Your_Body_1st_Edition.pdf';
+const EBOOK_PATH = 'Upgrade_Your_Body.pdf';
 
 export async function GET(req: NextRequest) {
   try {
