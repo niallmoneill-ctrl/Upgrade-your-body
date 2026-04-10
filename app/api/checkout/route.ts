@@ -10,10 +10,17 @@ function getStripe() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { priceId } = await req.json();
+    const { priceId, customAmount } = await req.json();
 
-    if (!priceId) {
-      return NextResponse.json({ error: 'Missing priceId' }, { status: 400 });
+    if (!priceId && !customAmount) {
+      return NextResponse.json({ error: 'Missing priceId or customAmount' }, { status: 400 });
+    }
+
+    // Validate custom amount: minimum €1, maximum €500, must be an integer (cents)
+    if (customAmount !== undefined) {
+      if (!Number.isInteger(customAmount) || customAmount < 100 || customAmount > 50000) {
+        return NextResponse.json({ error: 'Amount must be between €1 and €500' }, { status: 400 });
+      }
     }
 
     let userId: string | null = null;
@@ -44,6 +51,44 @@ export async function POST(req: NextRequest) {
     const bundlePriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_BUNDLE;
     const proMonthlyPriceId = process.env.STRIPE_PRICE_PRO_MONTHLY;
 
+    // --- Name your price (custom amount) ---
+    if (customAmount) {
+      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'eur',
+              product_data: {
+                name: 'Support Upgrade Your Body',
+                description: 'Thank you for supporting the project!',
+              },
+              unit_amount: customAmount,
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+        customer_creation: 'always',
+        metadata: {
+          product_type: 'support',
+          custom_amount: String(customAmount),
+          ...(userId && { user_id: userId }),
+          ...(userEmail && { customer_email: userEmail }),
+        },
+      };
+
+      if (userEmail) {
+        sessionConfig.customer_email = userEmail;
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionConfig);
+      return NextResponse.json({ url: session.url });
+    }
+
+    // --- Standard checkout (existing priceId flow) ---
     const price = await stripe.prices.retrieve(priceId);
     const isSubscription = price.type === 'recurring';
     const isBundle = priceId === bundlePriceId;
