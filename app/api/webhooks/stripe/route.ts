@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { notifyAdmin } from '@/lib/notify-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
@@ -156,13 +157,15 @@ export async function POST(req: NextRequest) {
             current_period_start: period.start,
             current_period_end: period.end,
           });
-          console.log(`Pro subscription saved for ${customerEmail}`);
+          notifyAdmin('New purchase: Pro subscription', 'Email: ' + customerEmail);
+        console.log(`Pro subscription saved for ${customerEmail}`);
         } else if (productType === 'one_time') {
           await upsertSubscription(userId, stripeCustomerId, {
             ebook_purchased: true,
             customer_email: customerEmail,
           });
-          console.log(`eBook purchase saved for ${customerEmail}`);
+          notifyAdmin('New purchase: eBook', 'Email: ' + customerEmail);
+        console.log(`eBook purchase saved for ${customerEmail}`);
         } else if (productType === 'bundle') {
           await upsertSubscription(userId, stripeCustomerId, {
             plan_type: 'pro',
@@ -188,7 +191,8 @@ export async function POST(req: NextRequest) {
               current_period_end: trialPeriod.end || new Date(trialEnd * 1000).toISOString(),
             });
           }
-          console.log(`Bundle purchase saved for ${customerEmail}`);
+          notifyAdmin('New purchase: Bundle', 'Email: ' + customerEmail);
+        console.log(`Bundle purchase saved for ${customerEmail}`);
         }
         break;
       }
