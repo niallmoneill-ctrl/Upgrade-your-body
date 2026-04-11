@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/theme-provider'
 import {
   LayoutDashboard, Target, CalendarCheck, Bell,
-  Settings, LogOut, Sun, Moon, Menu, X, Sparkles, Download, Youtube,
+  Settings, LogOut, Sun, Moon, Menu, X, Sparkles, Download, PlayCircle,
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -22,7 +22,7 @@ export default function Sidebar() {
     { name: 'Tracker', href: '/app/tracker', icon: Target },
     { name: 'Weekly Review', href: '/app/weekly-review', icon: CalendarCheck },
     { name: 'Reminders', href: '/app/reminders', icon: Bell },
-    { name: 'Learning Centre', href: 'https://www.youtube.com/@GoUpYourGame', icon: Youtube, external: true },
+    { name: 'Learning Centre', href: 'https://www.youtube.com/@GoUpYourGame', icon: PlayCircle, external: true },
     { name: 'Settings', href: '/app/settings', icon: Settings },
     { name: 'Upgrade', href: '/pricing', icon: Sparkles },
   ]
