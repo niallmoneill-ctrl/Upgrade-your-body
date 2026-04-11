@@ -10,25 +10,34 @@ const mainTiers = [
   {
     key: 'free',
     name: 'Free',
-    price: '\u20AC0',
+    price: '€0',
     period: '',
     badge: 'EARLY ACCESS',
     description: "Full access while we're in early access. No card required.",
     features: ['Personalised nutrition plans', 'Workout tracking & logging', 'Weekly review & analytics', 'Reminders & notifications', 'All features unlocked'],
     cta: 'Get started free',
-    popular: false,
     accent: 'blue' as const,
     type: 'free' as const,
   },
   {
+    key: 'support',
+    name: 'Support Us',
+    price: '€5',
+    period: '',
+    description: 'Love the app? Pay what you can to support development.',
+    features: ['Support indie development', 'Same full access as free', 'Good karma included', 'Help us build more features'],
+    cta: 'Support the project',
+    accent: 'gold' as const,
+    type: 'custom' as const,
+  },
+  {
     key: 'pdf',
     name: 'PDF eBook',
-    price: '\u20AC4.99',
+    price: '€4.99',
     period: '',
-    description: 'The complete guide \u2014 read anywhere, keep forever.',
+    description: 'The complete guide — read anywhere, keep forever.',
     features: ['Full nutrition & fitness guide', 'Downloadable PDF format', 'Lifetime access', 'Read offline on any device'],
     cta: 'Get the eBook',
-    popular: false,
     accent: 'default' as const,
     type: 'stripe' as const,
     priceEnv: 'NEXT_PUBLIC_STRIPE_PRICE_PDF',
@@ -36,29 +45,17 @@ const mainTiers = [
   {
     key: 'bundle',
     name: 'Bundle',
-    price: '\u20AC9.99',
+    price: '€9.99',
     period: '',
     badge: 'BEST VALUE',
-    description: 'PDF eBook + 3 months Pro access. Worth \u20AC12.96.',
-    features: ['Everything in PDF eBook', 'Everything in Pro', '3 months full app access', "Continues at \u20AC2.99/mo after", "Cancel anytime \u2014 keep the PDF"],
+    description: 'PDF eBook + 3 months Pro access. Worth €12.96.',
+    features: ['Everything in PDF eBook', 'Everything in Pro', '3 months full app access', 'Continues at €2.99/mo after', 'Cancel anytime — keep the PDF'],
     cta: 'Get the Bundle',
     popular: true,
-    savings: 'Save \u20AC2.97',
+    savings: 'Save €2.97',
     accent: 'green' as const,
     type: 'stripe' as const,
     priceEnv: 'NEXT_PUBLIC_STRIPE_PRICE_BUNDLE',
-  },
-  {
-    key: 'support',
-    name: 'Support Us',
-    price: 'Name your price',
-    period: '',
-    description: 'Love the app? Pay what you can to support development.',
-    features: ['Support indie development', 'Same full access as free', 'Good karma included', 'Help us build more features'],
-    cta: 'Support the project',
-    popular: false,
-    accent: 'default' as const,
-    type: 'custom' as const,
   },
 ];
 
@@ -66,7 +63,7 @@ const subTiers = [
   {
     key: 'monthly',
     name: 'Pro Monthly',
-    price: '\u20AC2.99',
+    price: '€2.99',
     period: '/mo',
     description: 'Full app access with personalised plans. Cancel anytime.',
     features: ['Personalised nutrition plans', 'Workout tracking & logging', 'Premium content library', 'Progress analytics'],
@@ -77,12 +74,12 @@ const subTiers = [
   {
     key: 'annual',
     name: 'Pro Annual',
-    price: '\u20AC24.99',
+    price: '€24.99',
     period: '/yr',
     description: 'Best price for long-term commitment. Save 30% vs monthly.',
     features: ['Everything in Pro Monthly', 'Save 30% vs monthly', 'Exclusive premium content', 'Early access to new features'],
     cta: 'Go Annual',
-    savings: 'Save \u20AC10.89/yr',
+    savings: 'Save €10.89/yr',
     type: 'stripe' as const,
     priceEnv: 'NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL',
   },
@@ -97,15 +94,16 @@ const priceIds: Record<string, string> = {
 
 const SUGGESTED_AMOUNTS = [2, 5, 10, 20];
 
-/* ── shared styles (aligned with WP theme) ── */
 const S = {
   bg: '#0a0f1a',
   card: 'rgba(255,255,255,0.025)',
   cardBorder: 'rgba(255,255,255,0.07)',
-  cardPopular: 'rgba(65,217,138,0.05)',
-  cardPopularBorder: 'rgba(65,217,138,0.35)',
+  cardGreen: 'rgba(65,217,138,0.05)',
+  cardGreenBorder: 'rgba(65,217,138,0.35)',
   cardBlue: 'rgba(74,158,255,0.05)',
   cardBlueBorder: 'rgba(74,158,255,0.25)',
+  cardGold: 'rgba(245,166,35,0.06)',
+  cardGoldBorder: 'rgba(245,166,35,0.3)',
   green: '#41d98a',
   blue: '#4a9eff',
   gold: '#f5a623',
@@ -128,7 +126,7 @@ export default function PricingPage() {
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) { headers['Authorization'] = 'Bearer ' + session.access_token; }
+    if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
     return headers;
   };
 
@@ -152,12 +150,12 @@ export default function PricingPage() {
     if (tier.type === 'custom') {
       if (customAmount < 1) return;
       setLoading(tier.key);
-      try { await handleCustomCheckout(customAmount); } catch (err) { console.error('Checkout error:', err); } finally { setLoading(null); }
+      try { await handleCustomCheckout(customAmount); } catch (err) { console.error(err); } finally { setLoading(null); }
       return;
     }
     if (tier.type === 'stripe' && tier.priceEnv) {
       setLoading(tier.key);
-      try { await handleStripeCheckout(tier.priceEnv); } catch (err) { console.error('Checkout error:', err); } finally { setLoading(null); }
+      try { await handleStripeCheckout(tier.priceEnv); } catch (err) { console.error(err); } finally { setLoading(null); }
     }
   };
 
@@ -165,83 +163,126 @@ export default function PricingPage() {
     <div style={{ minHeight: '100vh', background: S.bg, color: S.white, padding: '3.5rem 1rem 2rem' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
-        {/* Nav breadcrumb */}
+        {/* Nav */}
         <div style={{ marginBottom: '1.5rem', fontSize: '13px' }}>
-          <a href="/" style={{ color: S.muted, textDecoration: 'none' }}>{'\u2190'} Home</a>
+          <a href="/" style={{ color: S.muted, textDecoration: 'none' }}>← Home</a>
           <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 10px' }}>/</span>
           <a href="/login" style={{ color: S.muted, textDecoration: 'none' }}>Log in</a>
           <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 10px' }}>/</span>
           <a href="/signup" style={{ color: S.muted, textDecoration: 'none' }}>Sign up</a>
           <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 10px' }}>/</span>
-          <a href="https://oneill-labs.com/upgradeyourbody/" target="_blank" rel="noopener" style={{ color: S.muted, textDecoration: 'none' }}>Blog {'\u2197'}</a>
+          <a href="https://oneill-labs.com/upgradeyourbody/" target="_blank" rel="noopener" style={{ color: S.muted, textDecoration: 'none' }}>Blog ↗</a>
         </div>
 
-        {/* Header — matches WP gradient */}
+        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <p style={{ fontSize: '11px', letterSpacing: '4px', color: S.muted, textTransform: 'uppercase', marginBottom: '12px' }}>Book {'\u00B7'} App {'\u00B7'} YouTube</p>
+          <p style={{ fontSize: '11px', letterSpacing: '4px', color: S.muted, textTransform: 'uppercase', marginBottom: '12px' }}>Book · App · YouTube</p>
           <h1 style={{ fontSize: '2.8rem', fontWeight: 700, marginBottom: '12px', background: S.gradientFull, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Upgrade Your Body</h1>
           <p style={{ color: S.muted, fontSize: '1.05rem', maxWidth: '520px', margin: '0 auto', lineHeight: 1.6 }}>Full access is free during early access. Pay what you can to support development.</p>
         </div>
 
-        {/* ── Main 4 cards ── */}
+        {/* Main 4 cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(235px, 1fr))', gap: '1rem' }}>
           {mainTiers.map((tier) => {
-            const isPopular = tier.popular;
             const isBlue = tier.accent === 'blue';
-            const accentCol = isBlue ? S.blue : S.green;
-            const bg = isPopular ? S.cardPopular : isBlue ? S.cardBlue : S.card;
-            const border = isPopular ? S.cardPopularBorder : isBlue ? S.cardBlueBorder : S.cardBorder;
+            const isGold = tier.accent === 'gold';
+            const isGreen = tier.accent === 'green';
+            const accentCol = isBlue ? S.blue : isGold ? S.gold : S.green;
+            const bg = isGreen ? S.cardGreen : isBlue ? S.cardBlue : isGold ? S.cardGold : S.card;
+            const border = isGreen ? S.cardGreenBorder : isBlue ? S.cardBlueBorder : isGold ? S.cardGoldBorder : S.cardBorder;
+            const borderWidth = (isGreen || isBlue || isGold) ? '2px' : '1px';
 
             return (
-              <div key={tier.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', borderRadius: S.radius, padding: '1.5rem', background: bg, border: (isPopular || isBlue ? '2px' : '1px') + ' solid ' + border }}>
+              <div key={tier.key} style={{ position: 'relative', display: 'flex', flexDirection: 'column', borderRadius: S.radius, padding: '1.5rem', background: bg, border: `${borderWidth} solid ${border}` }}>
 
-                {tier.badge && (<div style={{ position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)', background: isBlue ? S.blue : S.green, color: S.bg, fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', padding: '3px 14px', borderRadius: '20px' }}>{tier.badge}</div>)}
+                {tier.badge && (
+                  <div style={{ position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)', background: isBlue ? S.blue : isGold ? S.gold : S.green, color: S.bg, fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', padding: '3px 14px', borderRadius: '20px' }}>
+                    {tier.badge}
+                  </div>
+                )}
 
-                <p style={{ fontSize: '11px', letterSpacing: '2.5px', textTransform: 'uppercase', color: S.muted, marginBottom: '10px' }}>{tier.name}</p>
+                <p style={{ fontSize: '11px', letterSpacing: '2.5px', textTransform: 'uppercase', color: isGold ? S.gold : S.muted, marginBottom: '10px' }}>{tier.name}</p>
 
                 {tier.type === 'custom' ? (
                   <div style={{ marginBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{ fontSize: '2rem', fontWeight: 700, color: S.white }}>{'\u20AC'}{customAmount}</span>
+                      <span style={{ fontSize: '2rem', fontWeight: 700, color: S.gold }}>€{customAmount}</span>
                       <span style={{ fontSize: '13px', color: S.muted }}>one-time</span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', marginTop: '12px', marginBottom: '8px' }}>
                       {SUGGESTED_AMOUNTS.map((amt) => {
                         const sel = customAmount === amt && !showCustomInput;
-                        return (<button key={amt} onClick={() => { setCustomAmount(amt); setShowCustomInput(false); }} style={{ flex: 1, padding: '7px 0', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', background: sel ? 'rgba(65,217,138,0.18)' : 'rgba(255,255,255,0.05)', color: sel ? S.green : S.muted, outline: sel ? '1px solid rgba(65,217,138,0.4)' : '1px solid rgba(255,255,255,0.07)' }}>{'\u20AC'}{amt}</button>);
+                        return (
+                          <button key={amt} onClick={() => { setCustomAmount(amt); setShowCustomInput(false); }} style={{ flex: 1, padding: '7px 0', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: 'none', background: sel ? 'rgba(245,166,35,0.18)' : 'rgba(255,255,255,0.05)', color: sel ? S.gold : S.muted, outline: sel ? '1px solid rgba(245,166,35,0.4)' : '1px solid rgba(255,255,255,0.07)' }}>
+                            €{amt}
+                          </button>
+                        );
                       })}
                     </div>
                     {!showCustomInput ? (
-                      <button onClick={() => setShowCustomInput(true)} style={{ fontSize: '12px', color: S.muted, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>Or enter a custom amount {'\u2192'}</button>
+                      <button onClick={() => setShowCustomInput(true)} style={{ fontSize: '12px', color: S.muted, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}>Or enter a custom amount →</button>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <span style={{ color: S.muted, fontSize: '14px' }}>{'\u20AC'}</span>
+                        <span style={{ color: S.muted, fontSize: '14px' }}>€</span>
                         <input type="number" min="1" max="500" value={customAmount} onChange={(e) => setCustomAmount(Math.max(1, Number(e.target.value)))} style={{ width: '80px', padding: '8px 12px', borderRadius: '8px', fontSize: '16px', fontWeight: 600, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', outline: 'none' }} />
                       </div>
                     )}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 700, color: isBlue ? S.blue : isPopular ? S.green : S.white }}>{tier.price}</span>
+                    <span style={{ fontSize: '2rem', fontWeight: 700, color: accentCol }}>{tier.price}</span>
                     {tier.period && <span style={{ fontSize: '13px', color: S.muted }}>{tier.period}</span>}
                   </div>
                 )}
 
-                {'savings' in tier && tier.savings && (<span style={{ display: 'inline-block', fontSize: '11px', padding: '3px 10px', borderRadius: '12px', marginBottom: '8px', width: 'fit-content', background: 'rgba(65,217,138,0.12)', color: S.green }}>{tier.savings}</span>)}
+                {'savings' in tier && tier.savings && (
+                  <span style={{ display: 'inline-block', fontSize: '11px', padding: '3px 10px', borderRadius: '12px', marginBottom: '8px', width: 'fit-content', background: 'rgba(65,217,138,0.12)', color: S.green }}>{tier.savings}</span>
+                )}
 
                 <p style={{ fontSize: '13px', color: S.muted, marginBottom: '1.25rem', lineHeight: 1.5 }}>{tier.description}</p>
 
                 <ul style={{ flex: 1, listStyle: 'none', padding: 0, margin: '0 0 1.25rem 0' }}>
-                  {tier.features.map((f, i) => (<li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: S.text, padding: '3px 0' }}><span style={{ color: accentCol, flexShrink: 0, marginTop: '1px' }}>{'\u2713'}</span>{f}</li>))}
+                  {tier.features.map((f, i) => (
+                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: S.text, padding: '3px 0' }}>
+                      <span style={{ color: accentCol, flexShrink: 0, marginTop: '1px' }}>✓</span>{f}
+                    </li>
+                  ))}
                 </ul>
 
-                <button onClick={() => handleClick(tier)} disabled={loading !== null} style={{ width: '100%', padding: '11px', borderRadius: S.radiusSm, fontSize: '14px', fontWeight: 600, cursor: 'pointer', border: 'none', background: isBlue ? S.gradient : isPopular ? S.green : 'transparent', color: (isBlue || isPopular) ? S.bg : S.green, outline: (!isBlue && !isPopular) ? '1px solid rgba(65,217,138,0.3)' : 'none', opacity: loading && loading !== tier.key ? 0.5 : 1, transition: 'opacity 0.2s' }}>{loading === tier.key ? 'Processing...' : tier.cta}</button>
+                <button onClick={() => handleClick(tier)} disabled={loading !== null} style={{ width: '100%', padding: '11px', borderRadius: S.radiusSm, fontSize: '14px', fontWeight: 600, cursor: 'pointer', border: 'none', background: isBlue ? S.gradient : isGreen ? S.green : isGold ? 'rgba(245,166,35,0.15)' : 'transparent', color: (isBlue || isGreen) ? S.bg : isGold ? S.gold : S.green, outline: (isBlue || isGreen) ? 'none' : isGold ? '1px solid rgba(245,166,35,0.4)' : '1px solid rgba(65,217,138,0.3)', opacity: loading && loading !== tier.key ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                  {loading === tier.key ? 'Processing...' : tier.cta}
+                </button>
               </div>
             );
           })}
         </div>
 
-        {/* ── Subscription section ── */}
+        {/* Amazon / Kindle section */}
+        <div style={{ textAlign: 'center', margin: '3.5rem 0 1.25rem' }}>
+          <div style={{ width: '40px', height: '2px', background: S.gradientFull, margin: '0 auto 16px', borderRadius: '1px' }}></div>
+          <p style={{ fontSize: '11px', letterSpacing: '3px', color: S.muted, textTransform: 'uppercase', marginBottom: '6px' }}>Also on Amazon</p>
+          <p style={{ color: '#555', fontSize: '0.9rem' }}>Read on any device or hold it in your hands.</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+          {[
+            { label: 'Kindle eBook', price: '€2.99', sub: 'Read on any device → Amazon', icon: '📱', url: KINDLE_URL },
+            { label: 'Physical Book', price: '€9.99', sub: 'Printed & delivered → Amazon', icon: '📖', url: PHYSICAL_BOOK_URL },
+          ].map((item) => (
+            <a key={item.label} href={item.url} target="_blank" rel="noopener" style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderRadius: S.radius, padding: '1.25rem 1.5rem', background: S.cardGold, border: `1px solid ${S.cardGoldBorder}`, cursor: 'pointer' }}>
+                <span style={{ fontSize: '2rem' }}>{item.icon}</span>
+                <div>
+                  <p style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: S.muted, marginBottom: '4px' }}>{item.label}</p>
+                  <p style={{ fontSize: '1.4rem', fontWeight: 700, color: S.gold, marginBottom: '2px' }}>{item.price}</p>
+                  <p style={{ fontSize: '12px', color: S.muted }}>{item.sub}</p>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* Subscription plans */}
         <div style={{ textAlign: 'center', margin: '3.5rem 0 1.25rem' }}>
           <div style={{ width: '40px', height: '2px', background: S.gradient, margin: '0 auto 16px', borderRadius: '1px' }}></div>
           <p style={{ fontSize: '11px', letterSpacing: '3px', color: S.muted, textTransform: 'uppercase', marginBottom: '6px' }}>Subscription plans</p>
@@ -256,34 +297,36 @@ export default function PricingPage() {
                 <span style={{ fontSize: '2rem', fontWeight: 700, color: S.white }}>{tier.price}</span>
                 <span style={{ fontSize: '13px', color: S.muted }}>{tier.period}</span>
               </div>
-              {'savings' in tier && tier.savings && (<span style={{ display: 'inline-block', fontSize: '11px', padding: '3px 10px', borderRadius: '12px', marginBottom: '8px', width: 'fit-content', background: 'rgba(65,217,138,0.12)', color: S.green }}>{tier.savings}</span>)}
+              {'savings' in tier && tier.savings && (
+                <span style={{ display: 'inline-block', fontSize: '11px', padding: '3px 10px', borderRadius: '12px', marginBottom: '8px', width: 'fit-content', background: 'rgba(65,217,138,0.12)', color: S.green }}>{tier.savings}</span>
+              )}
               <p style={{ fontSize: '13px', color: S.muted, marginBottom: '1.25rem', lineHeight: 1.5 }}>{tier.description}</p>
               <ul style={{ flex: 1, listStyle: 'none', padding: 0, margin: '0 0 1.25rem 0' }}>
-                {tier.features.map((f, i) => (<li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: S.text, padding: '3px 0' }}><span style={{ color: S.green, flexShrink: 0, marginTop: '1px' }}>{'\u2713'}</span>{f}</li>))}
+                {tier.features.map((f, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: S.text, padding: '3px 0' }}>
+                    <span style={{ color: S.green, flexShrink: 0, marginTop: '1px' }}>✓</span>{f}
+                  </li>
+                ))}
               </ul>
-              <button onClick={() => handleClick(tier)} disabled={loading !== null} style={{ width: '100%', padding: '11px', borderRadius: S.radiusSm, fontSize: '14px', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'transparent', color: S.green, outline: '1px solid rgba(65,217,138,0.3)', opacity: loading && loading !== tier.key ? 0.5 : 1, transition: 'opacity 0.2s' }}>{loading === tier.key ? 'Processing...' : tier.cta}</button>
+              <button onClick={() => handleClick(tier)} disabled={loading !== null} style={{ width: '100%', padding: '11px', borderRadius: S.radiusSm, fontSize: '14px', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'transparent', color: S.green, outline: '1px solid rgba(65,217,138,0.3)', opacity: loading && loading !== tier.key ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                {loading === tier.key ? 'Processing...' : tier.cta}
+              </button>
             </div>
           ))}
         </div>
 
-        {/* Amazon links */}
-        <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-          <p style={{ fontSize: '14px', color: S.muted }}>
-            Also available: <a href={KINDLE_URL} target="_blank" rel="noopener" style={{ color: S.gold, fontWeight: 600, textDecoration: 'none' }}>Kindle ({'\u20AC'}2.99)</a> and <a href={PHYSICAL_BOOK_URL} target="_blank" rel="noopener" style={{ color: S.gold, fontWeight: 600, textDecoration: 'none' }}>Physical Book ({'\u20AC'}9.99)</a> on Amazon.
-          </p>
-          <p style={{ fontSize: '12px', color: '#333', marginTop: '8px' }}>All prices in EUR. Secure payments powered by Stripe.</p>
-        </div>
-
         {/* Footer */}
         <footer style={{ textAlign: 'center', marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <p style={{ fontSize: '12px', color: '#444', marginBottom: '12px' }}>All prices in EUR. Secure payments powered by Stripe.</p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', flexWrap: 'wrap', fontSize: '12px' }}>
             <a href="https://oneill-labs.com/upgradeyourbody/" target="_blank" rel="noopener" style={{ color: '#555', textDecoration: 'none' }}>Blog</a>
-            <a href="https://oneill-labs.com" target="_blank" rel="noopener" style={{ color: '#555', textDecoration: 'none' }}>O{"'"}Neill Labs</a>
+            <a href="https://oneill-labs.com" target="_blank" rel="noopener" style={{ color: '#555', textDecoration: 'none' }}>O'Neill Labs</a>
             <a href="https://www.youtube.com/@GoUpYourGame" target="_blank" rel="noopener" style={{ color: '#555', textDecoration: 'none' }}>YouTube</a>
             <a href="/" style={{ color: '#555', textDecoration: 'none' }}>Home</a>
           </div>
-          <p style={{ fontSize: '11px', color: '#333', marginTop: '10px' }}>{'\u00A9'} {new Date().getFullYear()} O{"'"}Neill Labs / Niall O{"'"}Neill {'\u2014'} All rights reserved.</p>
+          <p style={{ fontSize: '11px', color: '#333', marginTop: '10px' }}>© {new Date().getFullYear()} O'Neill Labs / Niall O'Neill — All rights reserved.</p>
         </footer>
+
       </div>
     </div>
   );
