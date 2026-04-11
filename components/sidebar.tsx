@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/theme-provider'
 import {
   LayoutDashboard, Target, CalendarCheck, Bell,
-  Settings, LogOut, Sun, Moon, Menu, X, Sparkles,
+  Settings, LogOut, Sun, Moon, Menu, X, Sparkles, Download, Youtube,
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -15,12 +15,14 @@ export default function Sidebar() {
   const router = useRouter()
   const { theme, toggle } = useTheme()
   const [open, setOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const nav = [
     { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
     { name: 'Tracker', href: '/app/tracker', icon: Target },
     { name: 'Weekly Review', href: '/app/weekly-review', icon: CalendarCheck },
     { name: 'Reminders', href: '/app/reminders', icon: Bell },
+    { name: 'Learning Centre', href: 'https://www.youtube.com/@GoUpYourGame', icon: Youtube, external: true },
     { name: 'Settings', href: '/app/settings', icon: Settings },
     { name: 'Upgrade', href: '/pricing', icon: Sparkles },
   ]
@@ -29,6 +31,16 @@ export default function Sidebar() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const res = await fetch('/api/ebook/download')
+      const data = await res.json()
+      if (data.url) window.open(data.url, '_blank')
+    } catch (err) { console.error(err) }
+    finally { setDownloading(false) }
   }
 
   const SidebarContent = () => (
@@ -69,6 +81,7 @@ export default function Sidebar() {
               key={item.name}
               href={item.href}
               onClick={() => setOpen(false)}
+              {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
               style={
                 active
@@ -91,9 +104,23 @@ export default function Sidebar() {
         style={{ borderTop: '1px solid var(--uyb-card-border)' }}
       >
         <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
+          style={{ color: 'var(--uyb-text)', opacity: downloading ? 0.6 : 1 }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--uyb-surface)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
+          <Download className="h-4 w-4" />
+          {downloading ? 'Preparing...' : 'Download PDF'}
+        </button>
+
+        <button
           onClick={toggle}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
-          style={{ color: 'var(--uyb-muted)' }}
+          style={{ color: 'var(--uyb-text)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--uyb-surface)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
         >
           {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === 'dark' ? 'Light mode' : 'Dark mode'}
@@ -102,7 +129,9 @@ export default function Sidebar() {
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition"
-          style={{ color: 'var(--uyb-muted)' }}
+          style={{ color: 'var(--uyb-text)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--uyb-surface)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
         >
           <LogOut className="h-4 w-4" />
           Log out
@@ -141,7 +170,7 @@ export default function Sidebar() {
       {/* Mobile slide-in sidebar */}
       <div
         className="md:hidden fixed top-0 left-0 z-50 h-full transition-transform duration-300"
-        style={{ transform: open ? 'translateX(0)' : 'translateX(-100%)' }}
+        style={{ transform: open ? 'translateX(0)' : 'translateX(-100%)', background: 'var(--uyb-sidebar-solid)' }}
       >
         <SidebarContent />
       </div>

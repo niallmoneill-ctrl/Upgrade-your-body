@@ -13,6 +13,7 @@
   --uyb-orange: #d4891e;
   --uyb-surface: #f1f5f9;
   --uyb-sidebar-bg: #ffffff;
+  --uyb-sidebar-solid: #ffffff;
   --uyb-sidebar-border: #e2e8f0;
   --uyb-input-bg: #ffffff;
   --uyb-input-border: #cbd5e1;
@@ -33,6 +34,7 @@
   --uyb-orange: #ff9a3d;
   --uyb-surface: rgba(255,255,255,0.04);
   --uyb-sidebar-bg: rgba(255,255,255,0.03);
+  --uyb-sidebar-solid: #0c1a2e;
   --uyb-sidebar-border: rgba(255,255,255,0.08);
   --uyb-input-bg: rgba(255,255,255,0.06);
   --uyb-input-border: rgba(255,255,255,0.12);
