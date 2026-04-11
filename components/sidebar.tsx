@@ -45,7 +45,7 @@ export default function Sidebar() {
 
   const SidebarContent = () => (
     <div
-      className="flex h-full w-64 flex-col p-5"
+      className="flex min-h-full w-64 flex-col p-5 overflow-y-auto"
       style={{
         background: 'var(--uyb-sidebar-bg)',
         borderRight: '1px solid var(--uyb-sidebar-border)',
@@ -143,7 +143,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex md:flex-col md:w-64 min-h-screen"
+      <div className="hidden md:flex md:flex-col md:w-64 h-screen sticky top-0 overflow-y-auto"
         style={{ background: 'var(--uyb-sidebar-bg)', borderRight: '1px solid var(--uyb-sidebar-border)' }}
       >
         <SidebarContent />

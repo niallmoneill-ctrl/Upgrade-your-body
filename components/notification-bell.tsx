@@ -84,7 +84,7 @@ export default function NotificationBell() {
         <div
           className="absolute right-0 top-12 z-50 w-80 overflow-hidden"
           style={{
-            background: 'var(--uyb-card)',
+            background: 'var(--uyb-dropdown-bg)',
             border: '1px solid var(--uyb-card-border)',
             borderRadius: 18,
             boxShadow: 'var(--uyb-card-shadow)',

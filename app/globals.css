@@ -18,6 +18,7 @@
   --uyb-input-bg: #ffffff;
   --uyb-input-border: #cbd5e1;
   --uyb-green-soft: #e8f5ef;
+  --uyb-dropdown-bg: #ffffff;
   --uyb-btn-gradient: linear-gradient(90deg, #2a9d6e, #5abf94);
 }
 
@@ -35,6 +36,7 @@
   --uyb-surface: rgba(255,255,255,0.04);
   --uyb-sidebar-bg: rgba(255,255,255,0.03);
   --uyb-sidebar-solid: #0c1a2e;
+  --uyb-dropdown-bg: #0e1e33;
   --uyb-sidebar-border: rgba(255,255,255,0.08);
   --uyb-input-bg: rgba(255,255,255,0.06);
   --uyb-input-border: rgba(255,255,255,0.12);
