@@ -38,7 +38,7 @@ export default function Sidebar() {
     try {
       const res = await fetch('/api/ebook/download')
       const data = await res.json()
-      if (data.url) window.open(data.url, '_blank')
+      if (data.url) window.location.href = data.url
     } catch (err) { console.error(err) }
     finally { setDownloading(false) }
   }
