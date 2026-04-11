@@ -23,6 +23,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --uyb-bg: #08111f;
   --uyb-bg-deep: #050b13;
   --uyb-text: #f4f7fb;

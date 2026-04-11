@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, Plus, Check, X, Clock } from 'lucide-react'
+import { Bell, Plus, Check, X, Clock, Trash2 } from 'lucide-react'
 import { api } from '@/lib/api'
 
 type Reminder = { id: string; title: string; reminder_time: string; enabled: boolean }
@@ -25,6 +25,13 @@ export default function RemindersPage() {
       const d = await api<{ reminder: Reminder }>('/api/reminders', { method: 'POST', body: JSON.stringify({ title: draftTitle.trim(), reminder_time: draftTime, enabled: true }) })
       setReminders((p) => [...p, d.reminder]); setDraftTitle(''); setDraftTime('08:00'); setShowCreate(false); flash('Reminder created!')
     } catch (err) { setError(err instanceof Error ? err.message : 'Failed to create') }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api('/api/reminders', { method: 'DELETE', body: JSON.stringify({ id }) })
+      setReminders((p) => p.filter((r) => r.id !== id)); flash('Reminder deleted')
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to delete') }
   }
 
   async function handleToggle(id: string, enabled: boolean) {
@@ -90,11 +97,18 @@ export default function RemindersPage() {
                     </div>
                   </div>
                 </div>
-                <button onClick={() => handleToggle(item.id, item.enabled)}
-                  className="relative h-7 w-12 rounded-full transition"
-                  style={{ background: item.enabled ? 'linear-gradient(90deg, var(--uyb-green), #64f0b1)' : 'var(--uyb-surface)', border: item.enabled ? 'none' : '1px solid var(--uyb-card-border)' }}>
-                  <span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition" style={{ left: item.enabled ? 20 : 2 }} />
-                </button>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => handleToggle(item.id, item.enabled)}
+                    className="relative h-7 w-12 rounded-full transition"
+                    style={{ background: item.enabled ? 'linear-gradient(90deg, var(--uyb-green), #64f0b1)' : 'var(--uyb-surface)', border: item.enabled ? 'none' : '1px solid var(--uyb-card-border)' }}>
+                    <span className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition" style={{ left: item.enabled ? 20 : 2 }} />
+                  </button>
+                  <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg transition" style={{ color: 'var(--uyb-muted)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#fca5a5')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--uyb-muted)')}>
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
