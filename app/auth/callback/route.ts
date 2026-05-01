@@ -10,11 +10,15 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/app/dashboard'
   const supabase = await createClient()
 
+  function isNewUser(createdAt: string) {
+    return Date.now() - new Date(createdAt).getTime() < 5 * 60 * 1000
+  }
+
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ type: type as any, token_hash })
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      if (user && isNewUser(user.created_at)) {
         notifyAdmin('New signup', 'Email: ' + (user.email || 'unknown') + '<br>Method: ' + (type || 'magic link') + '<br>Time: ' + new Date().toISOString())
       }
       return NextResponse.redirect(`${origin}${next}`)
@@ -25,7 +29,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      if (user && isNewUser(user.created_at)) {
         notifyAdmin('New signup', 'Email: ' + (user.email || 'unknown') + '<br>Method: OAuth<br>Time: ' + new Date().toISOString())
       }
       return NextResponse.redirect(`${origin}${next}`)
