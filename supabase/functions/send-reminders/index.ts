@@ -159,65 +159,108 @@ Deno.serve(async (req) => {
 function buildEmail(greeting: string, title: string, phrase: string, appUrl: string): string {
   return `
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
-<div style="background:radial-gradient(circle at top,#13263f 0%,#08111f 45%,#050b13 100%);padding:40px 20px;">
-<div style="max-width:520px;margin:0 auto;">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#08111f;" bgcolor="#08111f">
 
-  <!-- Logo -->
-  <div style="text-align:center;margin-bottom:32px;">
-    <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">
-      <span style="background:linear-gradient(90deg,#56b6ff,#41d98a,#ff9a3d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Upgrade</span>
-      <span style="color:#f4f7fb;"> Your Body</span>
-    </span>
-  </div>
+<!-- Outer wrapper -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#08111f" style="background-color:#08111f;">
+  <tr>
+    <td align="center" style="padding:40px 20px;">
 
-  <!-- Card -->
-  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:22px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
-    
-    <!-- Reminder title -->
-    <div style="background:linear-gradient(135deg,rgba(86,182,255,0.16),rgba(65,217,138,0.16));border-radius:14px;padding:16px;margin-bottom:24px;">
-      <div style="color:#b7c3d3;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:6px;">Reminder</div>
-      <div style="color:#f4f7fb;font-size:22px;font-weight:700;">${title}</div>
-    </div>
+      <!-- Inner container -->
+      <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;">
 
-    <!-- Greeting -->
-    <p style="color:#f4f7fb;font-size:15px;line-height:1.6;margin:0 0 20px;">
-      ${greeting}
-    </p>
-    <p style="color:#b7c3d3;font-size:15px;line-height:1.6;margin:0 0 24px;">
-      This is your reminder to check in with <strong style="color:#f4f7fb;">${title.toLowerCase()}</strong>. Small, consistent actions build lasting change.
-    </p>
+        <!-- Logo -->
+        <tr>
+          <td align="center" style="padding-bottom:32px;">
+            <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;font-family:Arial,Helvetica,sans-serif;">
+              <span style="color:#41d98a;">Upgrade</span><span style="color:#f4f7fb;"> Your Body</span>
+            </span>
+          </td>
+        </tr>
 
-    <!-- Motivational phrase -->
-    <div style="border-left:4px solid #41d98a;padding:16px 20px;margin:0 0 28px;background:rgba(65,217,138,0.06);border-radius:0 12px 12px 0;">
-      <p style="color:#e9f3ff;font-size:17px;line-height:1.5;margin:0;font-style:italic;">
-        "${phrase}"
-      </p>
-    </div>
+        <!-- Card -->
+        <tr>
+          <td bgcolor="#0d1e33" style="background-color:#0d1e33;border-radius:18px;padding:32px;border:1px solid #1e3a5f;">
 
-    <!-- CTA button -->
-    <div style="text-align:center;margin-bottom:8px;">
-      <a href="${appUrl}/app/tracker" style="display:inline-block;background:linear-gradient(90deg,#41d98a,#64f0b1);color:#041019;border-radius:999px;padding:14px 32px;font-weight:700;font-size:15px;text-decoration:none;box-shadow:0 8px 24px rgba(65,217,138,0.3);">
-        Open your tracker
-      </a>
-    </div>
-  </div>
+            <!-- Reminder label + title -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+              <tr>
+                <td bgcolor="#112240" style="background-color:#112240;border-radius:12px;padding:16px;">
+                  <p style="margin:0 0 6px;color:#7aa8cc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;font-family:Arial,Helvetica,sans-serif;">Reminder</p>
+                  <p style="margin:0;color:#f4f7fb;font-size:22px;font-weight:700;font-family:Arial,Helvetica,sans-serif;">${title}</p>
+                </td>
+              </tr>
+            </table>
 
-  <!-- Footer -->
-  <div style="text-align:center;margin-top:28px;">
-    <p style="color:#b7c3d3;font-size:12px;margin:0 0 8px;">
-      You're receiving this because you set a reminder in Upgrade Your Body.
-    </p>
-    <p style="color:#6b7f96;font-size:11px;margin:0;">
-      <a href="${appUrl}/app/reminders" style="color:#56b6ff;text-decoration:none;">Manage reminders</a> · 
-      © O'Neill Labs / Niall O'Neill
-    </p>
-  </div>
+            <!-- Greeting -->
+            <p style="margin:0 0 20px;color:#f4f7fb;font-size:15px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">${greeting}</p>
+            <p style="margin:0 0 24px;color:#b7c3d3;font-size:15px;line-height:1.6;font-family:Arial,Helvetica,sans-serif;">
+              This is your reminder to check in with <strong style="color:#f4f7fb;">${title.toLowerCase()}</strong>. Small, consistent actions build lasting change.
+            </p>
 
-</div>
-</div>
+            <!-- Motivational phrase -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
+              <tr>
+                <td bgcolor="#0e2a1e" style="background-color:#0e2a1e;border-left:4px solid #41d98a;border-radius:0 10px 10px 0;padding:16px 20px;">
+                  <p style="margin:0;color:#d4f0e4;font-size:16px;line-height:1.6;font-style:italic;font-family:Arial,Helvetica,sans-serif;">&ldquo;${phrase}&rdquo;</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA button -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding-bottom:8px;">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                    href="${appUrl}/app/tracker"
+                    style="height:50px;v-text-anchor:middle;width:200px;" arcsize="50%"
+                    fillcolor="#41d98a">
+                    <w:anchorlock/>
+                    <center style="color:#041019;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;">Open your tracker</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a href="${appUrl}/app/tracker"
+                    style="display:inline-block;background-color:#41d98a;color:#041019;border-radius:999px;padding:14px 32px;font-weight:700;font-size:15px;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">
+                    Open your tracker
+                  </a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="padding-top:28px;">
+            <p style="margin:0 0 8px;color:#b7c3d3;font-size:12px;font-family:Arial,Helvetica,sans-serif;">
+              You're receiving this because you set a reminder in Upgrade Your Body.
+            </p>
+            <p style="margin:0;color:#6b7f96;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
+              <a href="${appUrl}/app/reminders" style="color:#56b6ff;text-decoration:none;">Manage reminders</a> &middot;
+              &copy; O&apos;Neill Labs / Niall O&apos;Neill
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
 </body>
 </html>`
 }
